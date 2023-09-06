@@ -17,21 +17,34 @@ namespace NFGCodeESP32Client.Utils
 
         public object[] Values => ValuesCollection.ToArray();
 
-        public object this[object index]
+        public object this[object key]
         {
             get
             {
-                var idx = FindIdx(index);
+                var idx = FindIdx(key);
 
                 if (idx == -1)
-                    throw new Exception($"Key {index} no exists in collection");
+                    throw new Exception($"Key {key} no exists in collection");
 
                 return (object)ValuesCollection[idx];
             }
-            set => AddOrUpdate(index, value);
+            set => AddOrUpdate(key, value);
         }
 
         public int Count => KeysCollection.Count;
+
+        public bool TryGetValue(object key, out object value)
+        {
+            if (ContainsKey(key))
+            {
+                value = this[key];
+                return true;
+            }
+
+            value = default;
+
+            return false;
+        }
 
         public bool ContainsKey(object key)
             => FindIdx(key) != -1;

@@ -3,7 +3,10 @@ using System.Text;
 
 namespace NFGCodeESP32Client.Controllers
 {
-    public class StepperController
+    public class SensorsController
     {
+        #region GCodes
+
+        #endregion
     }
 }

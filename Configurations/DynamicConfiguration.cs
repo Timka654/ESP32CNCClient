@@ -8,7 +8,11 @@ namespace NFGCodeESP32Client.Configurations
 {
     internal class DynamicConfiguration
     {
+        public delegate void ConfigurationUpdateDelegate();
+
         private const string ConfigurationRelativeFilePath = "options.conf";
+
+        public static event ConfigurationUpdateDelegate OnConfigurationUpdate = () => { };
 
         public static PDictionary Options { get; } = new PDictionary();
 
@@ -59,12 +63,20 @@ namespace NFGCodeESP32Client.Configurations
                 if (keyEndIdx == -1)
                     continue;
 
-                var key = line.Substring(0, keyEndIdx).Trim();
+                var key = line.Substring(0, keyEndIdx).Trim().ToLower();
 
                 Options[key] = line.Substring(keyEndIdx + 1).Trim();
             }
 
+            OnConfigurationUpdate();
+
             return true;
         }
+
+        public static bool HasKey(string key)
+            => Options.ContainsKey(key);
+
+        public static string GetValue(string key)
+            => (string)Options[key];
     }
 }

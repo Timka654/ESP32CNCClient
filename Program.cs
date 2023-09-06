@@ -42,7 +42,7 @@ namespace NFGCodeESP32Client
                 if (!connectionResult)
                 {
                     Thread.Sleep(5_000);
-                    Power.RebootDevice();
+                    Power.RebootDevice(2_000);
                     return false;
                 }
             }
@@ -57,6 +57,7 @@ namespace NFGCodeESP32Client
         private static bool InitializeWebServer()
         {
             Debug.WriteLine("Initialize web server ");
+
             var ws = new WebServer(80, HttpProtocol.Http);
 
             ws.CommandReceived += Ws_CommandReceived;
@@ -74,22 +75,33 @@ namespace NFGCodeESP32Client
             RouteInfo.Post("Configuration/SaveOptions", ConfigurationController.SaveOptions),
             RouteInfo.Post("Configuration/SetOptions", ConfigurationController.SetOptions),
             RouteInfo.Post("Configuration/GetOptions", ConfigurationController.GetOptions),
+            RouteInfo.Post("Hardware/FirmwareVersion", HardwareController.FirmwareVersion),
             RouteInfo.Post("Hardware/Reboot", HardwareController.Reboot),
+            RouteInfo.Post("Network/Ping", NetworkController.Ping),
+
+            // GCodes
+            RouteInfo.Post("GCode/M115", HardwareController.M115),
+            RouteInfo.Post("GCode/M84", DrivesController.M84),
+            RouteInfo.Post("GCode/M18", DrivesController.M18),
+            RouteInfo.Post("GCode/M17", DrivesController.M17),
+            RouteInfo.Post("GCode/G0", DrivesController.G0),
+            RouteInfo.Post("GCode/G1", DrivesController.G1),
+
         };
 
         private static void Ws_CommandReceived(object obj, WebServerEventArgs e)
         {
-            var url = e.Context.Request.RawUrl.TrimStart('/');
+            RouteInfo route;
 
             foreach (var item in routes)
             {
-                var route = (RouteInfo)item;
+                route = (RouteInfo)item;
 
-                if (url.StartsWith(route.Url))
-                {
-                    route.RouteHandle(e);
-                    return;
-                }
+                if (!e.Context.Request.RawUrl.StartsWith(route.Url))
+                    continue;
+
+                route.RouteHandle(e);
+                return;
             }
 
             e.Context.Response.StatusCode = 404;

@@ -5,10 +5,10 @@ namespace NFGCodeESP32Client.Configurations
 {
     public class WifiConfiguration
     {
-        public const bool Enabled = false;
+        public const bool Enabled = true;
 
-        public const string ConnectionSSID = "";
+        public const string ConnectionSSID = "zal_22";
 
-        public const string ConnectionPassword = "";
+        public const string ConnectionPassword = "eQ1422dd31";
     }
 }

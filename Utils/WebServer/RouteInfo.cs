@@ -11,6 +11,9 @@ namespace NFGCodeESP32Client.Utils.WebServer
     {
         public RouteInfo(string url, string method, RouteHandleDelegate routeHandle)
         {
+            if (!url.StartsWith("/"))
+                url = $"/{url}";
+
             Url = url;
             Method = method;
             RouteHandle = routeHandle;

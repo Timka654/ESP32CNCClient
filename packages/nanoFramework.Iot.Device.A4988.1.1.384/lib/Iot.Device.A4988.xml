@@ -1,0 +1,71 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>Iot.Device.A4988</name>
+    </assembly>
+    <members>
+        <member name="T:Iot.Device.A4988.A4988">
+            <summary>
+            Class for controlling A4988 stepper motor driver.
+            </summary>
+        </member>
+        <member name="M:Iot.Device.A4988.A4988.#ctor(System.Byte,System.Byte,Iot.Device.A4988.Microsteps,System.UInt16,System.TimeSpan,System.Device.Gpio.GpioController,System.Boolean)">
+            <summary>
+            Initializes a new instance of the <see cref="T:Iot.Device.A4988.A4988" /> class.
+            </summary>
+            <param name="stepPin">Pin connected to STEP driver pin.</param>
+            <param name="dirPin">Pin connected to DIR driver pin.</param>
+            <param name="microsteps">Microsteps mode.</param>
+            <param name="fullStepsPerRotation">Full steps per rotation.</param>
+            <param name="sleepBetweenSteps">By changing this parameter you can set delay between steps and control the rotation speed (less time equals faster rotation).</param>
+            <param name="gpioController">GPIO controller.</param>
+            <param name="shouldDispose">True to dispose the Gpio Controller.</param>
+        </member>
+        <member name="M:Iot.Device.A4988.A4988.SleepBetweenSteps">
+            <summary>
+            Controls the speed of rotation.
+            </summary>
+        </member>
+        <member name="M:Iot.Device.A4988.A4988.Rotate(UnitsNet.Angle)">
+            <summary>
+            Rotates a stepper motor.
+            </summary>
+            <param name="angle">Angle to rotate.</param>
+        </member>
+        <member name="M:Iot.Device.A4988.A4988.Dispose">
+            <summary>
+            <inheritdoc/>
+            </summary>
+        </member>
+        <member name="T:Iot.Device.A4988.Microsteps">
+            <summary>
+            Enum for microsteps settings.
+            </summary>
+        </member>
+        <member name="F:Iot.Device.A4988.Microsteps.FullStep">
+            <summary>
+            No microsteps (full step).
+            </summary>
+        </member>
+        <member name="F:Iot.Device.A4988.Microsteps.HalfStep">
+            <summary>
+            1/2 step.
+            </summary>
+        </member>
+        <member name="F:Iot.Device.A4988.Microsteps.QuaterStep">
+            <summary>
+            1/4 step.
+            </summary>
+        </member>
+        <member name="F:Iot.Device.A4988.Microsteps.EightStep">
+            <summary>
+            1/8 step.
+            </summary>
+        </member>
+        <member name="F:Iot.Device.A4988.Microsteps.SisteenthStep">
+            <summary>
+            1/16 step.
+            </summary>
+        </member>
+    </members>
+</doc>

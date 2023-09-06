@@ -1,0 +1,263 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>UnitsNet.Angle</name>
+    </assembly>
+    <members>
+        <member name="T:UnitsNet.Angle">
+            <inheritdoc />
+            <summary>
+                In geometry, an angle is the figure formed by two rays, called the sides of the angle, sharing a common endpoint, called the vertex of the angle.
+            </summary>
+        </member>
+        <member name="F:UnitsNet.Angle._value">
+            <summary>
+                The numeric value this quantity was constructed with.
+            </summary>
+        </member>
+        <member name="F:UnitsNet.Angle._unit">
+            <summary>
+                The unit this quantity was constructed with.
+            </summary>
+        </member>
+        <member name="P:UnitsNet.Angle.Value">
+            <summary>
+                The numeric value this quantity was constructed with.
+            </summary>
+        </member>
+        <member name="P:UnitsNet.Angle.Unit">
+            <inheritdoc />
+        </member>
+        <member name="M:UnitsNet.Angle.#ctor(System.Double,UnitsNet.Units.AngleUnit)">
+            <summary>
+                Creates the quantity with the given numeric value and unit.
+            </summary>
+            <param name="value">The numeric value to construct this quantity with.</param>
+            <param name="unit">The unit representation to construct this quantity with.</param>
+            <exception cref="T:System.ArgumentException">If value is NaN or Infinity.</exception>
+        </member>
+        <member name="P:UnitsNet.Angle.BaseUnit">
+            <summary>
+                The base unit of Duration, which is Second. All conversions go via this value.
+            </summary>
+        </member>
+        <member name="P:UnitsNet.Angle.MaxValue">
+            <summary>
+            Represents the largest possible value of Duration
+            </summary>
+        </member>
+        <member name="P:UnitsNet.Angle.MinValue">
+            <summary>
+            Represents the smallest possible value of Duration
+            </summary>
+        </member>
+        <member name="P:UnitsNet.Angle.Zero">
+            <summary>
+                Gets an instance of this quantity with a value of 0 in the base unit Second.
+            </summary>
+        </member>
+        <member name="P:UnitsNet.Angle.Arcminutes">
+            <summary>
+                Gets a <see cref="T:System.Double"/> value of this quantity converted into <see cref="F:UnitsNet.Units.AngleUnit.Arcminute"/>
+            </summary>
+        </member>
+        <member name="P:UnitsNet.Angle.Arcseconds">
+            <summary>
+                Gets a <see cref="T:System.Double"/> value of this quantity converted into <see cref="F:UnitsNet.Units.AngleUnit.Arcsecond"/>
+            </summary>
+        </member>
+        <member name="P:UnitsNet.Angle.Centiradians">
+            <summary>
+                Gets a <see cref="T:System.Double"/> value of this quantity converted into <see cref="F:UnitsNet.Units.AngleUnit.Centiradian"/>
+            </summary>
+        </member>
+        <member name="P:UnitsNet.Angle.Deciradians">
+            <summary>
+                Gets a <see cref="T:System.Double"/> value of this quantity converted into <see cref="F:UnitsNet.Units.AngleUnit.Deciradian"/>
+            </summary>
+        </member>
+        <member name="P:UnitsNet.Angle.Degrees">
+            <summary>
+                Gets a <see cref="T:System.Double"/> value of this quantity converted into <see cref="F:UnitsNet.Units.AngleUnit.Degree"/>
+            </summary>
+        </member>
+        <member name="P:UnitsNet.Angle.Gradians">
+            <summary>
+                Gets a <see cref="T:System.Double"/> value of this quantity converted into <see cref="F:UnitsNet.Units.AngleUnit.Gradian"/>
+            </summary>
+        </member>
+        <member name="P:UnitsNet.Angle.Microdegrees">
+            <summary>
+                Gets a <see cref="T:System.Double"/> value of this quantity converted into <see cref="F:UnitsNet.Units.AngleUnit.Microdegree"/>
+            </summary>
+        </member>
+        <member name="P:UnitsNet.Angle.Microradians">
+            <summary>
+                Gets a <see cref="T:System.Double"/> value of this quantity converted into <see cref="F:UnitsNet.Units.AngleUnit.Microradian"/>
+            </summary>
+        </member>
+        <member name="P:UnitsNet.Angle.Millidegrees">
+            <summary>
+                Gets a <see cref="T:System.Double"/> value of this quantity converted into <see cref="F:UnitsNet.Units.AngleUnit.Millidegree"/>
+            </summary>
+        </member>
+        <member name="P:UnitsNet.Angle.Milliradians">
+            <summary>
+                Gets a <see cref="T:System.Double"/> value of this quantity converted into <see cref="F:UnitsNet.Units.AngleUnit.Milliradian"/>
+            </summary>
+        </member>
+        <member name="P:UnitsNet.Angle.Nanodegrees">
+            <summary>
+                Gets a <see cref="T:System.Double"/> value of this quantity converted into <see cref="F:UnitsNet.Units.AngleUnit.Nanodegree"/>
+            </summary>
+        </member>
+        <member name="P:UnitsNet.Angle.Nanoradians">
+            <summary>
+                Gets a <see cref="T:System.Double"/> value of this quantity converted into <see cref="F:UnitsNet.Units.AngleUnit.Nanoradian"/>
+            </summary>
+        </member>
+        <member name="P:UnitsNet.Angle.NatoMils">
+            <summary>
+                Gets a <see cref="T:System.Double"/> value of this quantity converted into <see cref="F:UnitsNet.Units.AngleUnit.NatoMil"/>
+            </summary>
+        </member>
+        <member name="P:UnitsNet.Angle.Radians">
+            <summary>
+                Gets a <see cref="T:System.Double"/> value of this quantity converted into <see cref="F:UnitsNet.Units.AngleUnit.Radian"/>
+            </summary>
+        </member>
+        <member name="P:UnitsNet.Angle.Revolutions">
+            <summary>
+                Gets a <see cref="T:System.Double"/> value of this quantity converted into <see cref="F:UnitsNet.Units.AngleUnit.Revolution"/>
+            </summary>
+        </member>
+        <member name="P:UnitsNet.Angle.Tilt">
+            <summary>
+                Gets a <see cref="T:System.Double"/> value of this quantity converted into <see cref="F:UnitsNet.Units.AngleUnit.Tilt"/>
+            </summary>
+        </member>
+        <member name="M:UnitsNet.Angle.FromArcminutes(System.Double)">
+            <summary>
+                Creates a <see cref="T:UnitsNet.Angle"/> from <see cref="F:UnitsNet.Units.AngleUnit.Arcminute"/>.
+            </summary>
+            <exception cref="T:System.ArgumentException">If value is NaN or Infinity.</exception>
+        </member>
+        <member name="M:UnitsNet.Angle.FromArcseconds(System.Double)">
+            <summary>
+                Creates a <see cref="T:UnitsNet.Angle"/> from <see cref="F:UnitsNet.Units.AngleUnit.Arcsecond"/>.
+            </summary>
+            <exception cref="T:System.ArgumentException">If value is NaN or Infinity.</exception>
+        </member>
+        <member name="M:UnitsNet.Angle.FromCentiradians(System.Double)">
+            <summary>
+                Creates a <see cref="T:UnitsNet.Angle"/> from <see cref="F:UnitsNet.Units.AngleUnit.Centiradian"/>.
+            </summary>
+            <exception cref="T:System.ArgumentException">If value is NaN or Infinity.</exception>
+        </member>
+        <member name="M:UnitsNet.Angle.FromDeciradians(System.Double)">
+            <summary>
+                Creates a <see cref="T:UnitsNet.Angle"/> from <see cref="F:UnitsNet.Units.AngleUnit.Deciradian"/>.
+            </summary>
+            <exception cref="T:System.ArgumentException">If value is NaN or Infinity.</exception>
+        </member>
+        <member name="M:UnitsNet.Angle.FromDegrees(System.Double)">
+            <summary>
+                Creates a <see cref="T:UnitsNet.Angle"/> from <see cref="F:UnitsNet.Units.AngleUnit.Degree"/>.
+            </summary>
+            <exception cref="T:System.ArgumentException">If value is NaN or Infinity.</exception>
+        </member>
+        <member name="M:UnitsNet.Angle.FromGradians(System.Double)">
+            <summary>
+                Creates a <see cref="T:UnitsNet.Angle"/> from <see cref="F:UnitsNet.Units.AngleUnit.Gradian"/>.
+            </summary>
+            <exception cref="T:System.ArgumentException">If value is NaN or Infinity.</exception>
+        </member>
+        <member name="M:UnitsNet.Angle.FromMicrodegrees(System.Double)">
+            <summary>
+                Creates a <see cref="T:UnitsNet.Angle"/> from <see cref="F:UnitsNet.Units.AngleUnit.Microdegree"/>.
+            </summary>
+            <exception cref="T:System.ArgumentException">If value is NaN or Infinity.</exception>
+        </member>
+        <member name="M:UnitsNet.Angle.FromMicroradians(System.Double)">
+            <summary>
+                Creates a <see cref="T:UnitsNet.Angle"/> from <see cref="F:UnitsNet.Units.AngleUnit.Microradian"/>.
+            </summary>
+            <exception cref="T:System.ArgumentException">If value is NaN or Infinity.</exception>
+        </member>
+        <member name="M:UnitsNet.Angle.FromMillidegrees(System.Double)">
+            <summary>
+                Creates a <see cref="T:UnitsNet.Angle"/> from <see cref="F:UnitsNet.Units.AngleUnit.Millidegree"/>.
+            </summary>
+            <exception cref="T:System.ArgumentException">If value is NaN or Infinity.</exception>
+        </member>
+        <member name="M:UnitsNet.Angle.FromMilliradians(System.Double)">
+            <summary>
+                Creates a <see cref="T:UnitsNet.Angle"/> from <see cref="F:UnitsNet.Units.AngleUnit.Milliradian"/>.
+            </summary>
+            <exception cref="T:System.ArgumentException">If value is NaN or Infinity.</exception>
+        </member>
+        <member name="M:UnitsNet.Angle.FromNanodegrees(System.Double)">
+            <summary>
+                Creates a <see cref="T:UnitsNet.Angle"/> from <see cref="F:UnitsNet.Units.AngleUnit.Nanodegree"/>.
+            </summary>
+            <exception cref="T:System.ArgumentException">If value is NaN or Infinity.</exception>
+        </member>
+        <member name="M:UnitsNet.Angle.FromNanoradians(System.Double)">
+            <summary>
+                Creates a <see cref="T:UnitsNet.Angle"/> from <see cref="F:UnitsNet.Units.AngleUnit.Nanoradian"/>.
+            </summary>
+            <exception cref="T:System.ArgumentException">If value is NaN or Infinity.</exception>
+        </member>
+        <member name="M:UnitsNet.Angle.FromNatoMils(System.Double)">
+            <summary>
+                Creates a <see cref="T:UnitsNet.Angle"/> from <see cref="F:UnitsNet.Units.AngleUnit.NatoMil"/>.
+            </summary>
+            <exception cref="T:System.ArgumentException">If value is NaN or Infinity.</exception>
+        </member>
+        <member name="M:UnitsNet.Angle.FromRadians(System.Double)">
+            <summary>
+                Creates a <see cref="T:UnitsNet.Angle"/> from <see cref="F:UnitsNet.Units.AngleUnit.Radian"/>.
+            </summary>
+            <exception cref="T:System.ArgumentException">If value is NaN or Infinity.</exception>
+        </member>
+        <member name="M:UnitsNet.Angle.FromRevolutions(System.Double)">
+            <summary>
+                Creates a <see cref="T:UnitsNet.Angle"/> from <see cref="F:UnitsNet.Units.AngleUnit.Revolution"/>.
+            </summary>
+            <exception cref="T:System.ArgumentException">If value is NaN or Infinity.</exception>
+        </member>
+        <member name="M:UnitsNet.Angle.FromTilt(System.Double)">
+            <summary>
+                Creates a <see cref="T:UnitsNet.Angle"/> from <see cref="F:UnitsNet.Units.AngleUnit.Tilt"/>.
+            </summary>
+            <exception cref="T:System.ArgumentException">If value is NaN or Infinity.</exception>
+        </member>
+        <member name="M:UnitsNet.Angle.From(System.Double,UnitsNet.Units.AngleUnit)">
+            <summary>
+                Dynamically convert from value and unit enum <see cref="T:UnitsNet.Units.AngleUnit" /> to <see cref="T:UnitsNet.Angle" />.
+            </summary>
+            <param name="value">Value to convert from.</param>
+            <param name="fromUnit">Unit to convert from.</param>
+            <returns>Angle unit value.</returns>
+        </member>
+        <member name="M:UnitsNet.Angle.As(UnitsNet.Units.AngleUnit)">
+            <summary>
+                Convert to the unit representation <paramref name="unit" />.
+            </summary>
+            <returns>Value converted to the specified unit.</returns>
+        </member>
+        <member name="M:UnitsNet.Angle.ToUnit(UnitsNet.Units.AngleUnit)">
+            <summary>
+                Converts this Duration to another Duration with the unit representation <paramref name="unit" />.
+            </summary>
+            <returns>A Duration with the specified unit.</returns>
+        </member>
+        <member name="M:UnitsNet.Angle.GetValueInBaseUnit">
+            <summary>
+                Converts the current value + unit to the base unit.
+                This is typically the first step in converting from one unit to another.
+            </summary>
+            <returns>The value in the base unit representation.</returns>
+        </member>
+    </members>
+</doc>
