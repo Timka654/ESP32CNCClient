@@ -5,19 +5,24 @@ using System.Text;
 
 namespace NFGCodeESP32Client.Utils.WebServer
 {
+    public delegate void RouteHandleDelegate(WebServerEventArgs context);
+
     public class RouteInfo
     {
-        //public RouteInfo(string url, string method, MethodInfo endPoint)
-        //{
-        //    Url = url;
-        //    Method = method;
-        //    EndPoint = endPoint;
-        //}
+        public RouteInfo(string url, string method, RouteHandleDelegate routeHandle)
+        {
+            Url = url;
+            Method = method;
+            RouteHandle = routeHandle;
+        }
 
-        public string Url { get; set; }
+        public static RouteInfo Post(string url, RouteHandleDelegate routeHandle)
+            => new RouteInfo(url, "POST", routeHandle);
 
-        public string Method { get; set; }
+        public string Url { get; }
 
-        public MethodInfo EndPoint { get; set; }
+        public string Method { get; }
+
+        public RouteHandleDelegate RouteHandle { get; }
     }
 }

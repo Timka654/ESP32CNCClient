@@ -22,9 +22,11 @@
     <Compile Include="Configurations\FSConfiguration.cs" />
     <Compile Include="Configurations\WifiConfiguration.cs" />
     <Compile Include="Controllers\ConfigurationController.cs" />
+    <Compile Include="Controllers\HardwareController.cs" />
     <Compile Include="Controllers\StepperController.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Utils\Extensions\HttpExtensions.cs" />
     <Compile Include="Utils\FileSystem.cs" />
     <Compile Include="Utils\PDictionary.cs" />
     <Compile Include="Utils\WebServer\RouteInfo.cs" />

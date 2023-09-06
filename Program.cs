@@ -20,9 +20,20 @@ namespace NFGCodeESP32Client
         {
             DynamicConfiguration.Initialize();
 
+            if (!InitializeWIFIConnection())
+                return;
+
+            if (!InitializeWebServer())
+                return;
+
+            Thread.Sleep(Timeout.Infinite);
+        }
+
+        private static bool InitializeWIFIConnection()
+        {
             if (WifiConfiguration.Enabled)
             {
-                Thread.Sleep(5_000);
+                Debug.WriteLine($"Try connect to {WifiConfiguration.ConnectionSSID}");
 
                 var connectionResult = WifiNetworkHelper.ConnectDhcp(WifiConfiguration.ConnectionSSID, WifiConfiguration.ConnectionPassword);
 
@@ -32,60 +43,38 @@ namespace NFGCodeESP32Client
                 {
                     Thread.Sleep(5_000);
                     Power.RebootDevice();
-                    return;
+                    return false;
                 }
             }
-
-            var ws = new WebServer(80, HttpProtocol.Http);
-
-
-            var methods = typeof(ConfigurationController).GetMethods();
-
-            var routeType = typeof(RouteAttribute);
-            var methodType = typeof(MethodAttribute);
-
-            foreach (var method in methods)
+            else
             {
-                var atribs = method.GetCustomAttributes(false);
-
-                RouteInfo route = new RouteInfo()
-                {
-                    EndPoint = method,
-                    Method = "GET"
-                };
-
-                foreach (var item in atribs)
-                {
-                    if (routeType.Equals(item.GetType()))
-                    {
-                        route.Url = ((RouteAttribute)item).Route;
-                    }
-
-                    if (methodType.Equals(item.GetType()))
-                    {
-                        route.Method = ((MethodAttribute)item).Method;
-                    }
-                }
-
-                if (route.Url != default)
-                    routes.Add(route);
+                Debug.WriteLine($"Wifi disabled.");
             }
 
+            return true;
+        }
+
+        private static bool InitializeWebServer()
+        {
+            Debug.WriteLine("Initialize web server ");
+            var ws = new WebServer(80, HttpProtocol.Http);
 
             ws.CommandReceived += Ws_CommandReceived;
 
             ws.Start();
 
-            Debug.WriteLine("Server started");
+            Debug.WriteLine("Web server started.");
 
-            Thread.Sleep(Timeout.Infinite);
+            return true;
         }
 
+
         private static ArrayList routes = new() {
-            //RouteInfo.Post("Configuration/ResetDefault", ConfigurationController.ResetOptionsContentAction),
-            //RouteInfo.Post("Configuration/SaveOptions", ConfigurationController.SaveOptionsContentAction),
-            //RouteInfo.Post("Configuration/SetContent", ConfigurationController.SetOptionsContentAction),
-            //RouteInfo.Post("Configuration/GetContent", ConfigurationController.GetOptionsContentAction),
+            RouteInfo.Post("Configuration/ResetOptions", ConfigurationController.ResetOptions),
+            RouteInfo.Post("Configuration/SaveOptions", ConfigurationController.SaveOptions),
+            RouteInfo.Post("Configuration/SetOptions", ConfigurationController.SetOptions),
+            RouteInfo.Post("Configuration/GetOptions", ConfigurationController.GetOptions),
+            RouteInfo.Post("Hardware/Reboot", HardwareController.Reboot),
         };
 
         private static void Ws_CommandReceived(object obj, WebServerEventArgs e)
@@ -98,7 +87,7 @@ namespace NFGCodeESP32Client
 
                 if (url.StartsWith(route.Url))
                 {
-                    route.EndPoint.Invoke(null, new object[] { e });
+                    route.RouteHandle(e);
                     return;
                 }
             }

@@ -15,7 +15,7 @@ namespace NFGCodeESP32Client.Utils
 
         public object[] Keys => KeysCollection.ToArray();
 
-        public object[] Values => KeysCollection.ToArray();
+        public object[] Values => ValuesCollection.ToArray();
 
         public object this[object index]
         {
