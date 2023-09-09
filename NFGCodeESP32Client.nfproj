@@ -22,6 +22,7 @@
     <Compile Include="Configurations\FirmwareConfiguration.cs" />
     <Compile Include="Configurations\FSConfiguration.cs" />
     <Compile Include="Configurations\GPIOConfiguration.cs" />
+    <Compile Include="Configurations\WebServerConfiguration.cs" />
     <Compile Include="Configurations\WifiConfiguration.cs" />
     <Compile Include="Controllers\ConfigurationController.cs" />
     <Compile Include="Controllers\HardwareController.cs" />
@@ -63,6 +64,9 @@
     </Reference>
     <Reference Include="nanoFramework.WebServer">
       <HintPath>packages\nanoFramework.WebServer.1.1.75\lib\nanoFramework.WebServer.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Device.Adc">
+      <HintPath>packages\nanoFramework.System.Device.Adc.1.1.6\lib\System.Device.Adc.dll</HintPath>
     </Reference>
     <Reference Include="System.Device.Gpio">
       <HintPath>packages\nanoFramework.System.Device.Gpio.1.1.28\lib\System.Device.Gpio.dll</HintPath>

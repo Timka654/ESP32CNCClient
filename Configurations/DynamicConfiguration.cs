@@ -61,7 +61,9 @@ namespace NFGCodeESP32Client.Configurations
                 var keyEndIdx = line.IndexOf('=');
 
                 if (keyEndIdx == -1)
+                {
                     continue;
+                }
 
                 var key = line.Substring(0, keyEndIdx).Trim().ToLower();
 
