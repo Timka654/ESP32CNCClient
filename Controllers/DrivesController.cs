@@ -220,6 +220,18 @@ namespace NFGCodeESP32Client.Controllers
         public static void G1(WebServerEventArgs e)
             => G0(e);
 
+        public static void G2(WebServerEventArgs e)
+        {
+            var query = e.Context.ReadBodyAsString();
+
+            var parameters = query.ParseGParameters();
+
+
+        }
+
+        public static void G3(WebServerEventArgs e)
+            => G2(e);
+
         #endregion
     }
 }
