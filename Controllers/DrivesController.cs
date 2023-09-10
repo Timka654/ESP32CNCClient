@@ -33,22 +33,29 @@ namespace NFGCodeESP32Client.Controllers
             {
                 foreach (var item in stepperEnablePins.Values)
                 {
-                    ((GpioPin)item).Write(PinValue.Low);
-                    ((GpioPin)item).Dispose();
+                    var pin = (GpioPin)item;
+
+                    pin.Write(PinValue.Low);
+
+                    pin.Dispose();
                 }
 
                 stepperEnablePins.Clear();
 
                 foreach (var item in stepperEndStops.Values)
                 {
-                    ((AxisEndStop)item).Dispose();
+                    var endStop = (AxisEndStop)item;
+
+                    endStop.Dispose();
                 }
 
                 stepperEndStops.Clear();
 
                 foreach (var item in steppers.Values)
                 {
-                    ((StepperMotor)item).Dispose();
+                    var stepper = (StepperMotor)item;
+
+                    stepper.Dispose();
                 }
 
                 steppers.Clear();
@@ -304,9 +311,9 @@ namespace NFGCodeESP32Client.Controllers
                     return;
                 }
 
-                if (double.TryParse((string)parameters[item], out var distance))
+                if (double.TryParse((string)parameters[item], out var pos))
                 {
-                    stepper.SetPosition(distance);
+                    stepper.SetPosition(pos);
 
                     if (!string.IsNullOrEmpty(stepper.ErrorMessage))
                     {
