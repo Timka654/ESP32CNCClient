@@ -23,6 +23,10 @@ namespace NFGCodeESP32Client.Controllers
 
         static PDictionary steppers = new PDictionary();
 
+        static PDictionary stepperEndStops = new PDictionary();
+
+        public static bool AbsoluteCoordinates { get; private set; } = true;
+
         static DrivesController()
         {
             DynamicConfiguration.OnConfigurationUpdate += () =>
@@ -34,6 +38,13 @@ namespace NFGCodeESP32Client.Controllers
                 }
 
                 stepperEnablePins.Clear();
+
+                foreach (var item in stepperEndStops.Values)
+                {
+                    ((AxisEndStop)item).Dispose();
+                }
+
+                stepperEndStops.Clear();
 
                 foreach (var item in steppers.Values)
                 {
@@ -71,7 +82,113 @@ namespace NFGCodeESP32Client.Controllers
 
         }
 
+        static bool allInited = false;
+
+        private static string InitSteppers()
+        {
+            if (!allInited)
+            {
+                foreach (var item in DynamicConfiguration.Options.Keys)
+                {
+                    if (((string)item).StartsWith("stepper_"))
+                    {
+                        var stepper = GetOrInitStepper((string)item, out var errorMessage);
+
+                        if (!string.IsNullOrEmpty(errorMessage))
+                            return errorMessage;
+                    }
+                }
+
+                allInited = true;
+            }
+
+            return null;
+        }
+
+        private static StepperMotor GetOrInitStepper(string key, out string errorMessage)
+        {
+            StepperMotor stepper = default;
+
+            if (steppers.TryGetValue(key, out var _stepper))
+                stepper = (StepperMotor)_stepper;
+            else
+            {
+                stepper = new StepperMotor((string)key, stepperEndStops, gpioController);
+
+                if (!string.IsNullOrEmpty(stepper.ErrorMessage))
+                {
+                    errorMessage = stepper.ErrorMessage;
+                    return null;
+                }
+
+                steppers[key] = stepper;
+            }
+
+            errorMessage = null;
+
+            return stepper;
+        }
+
         #region GCodes
+
+        public static void M114(WebServerEventArgs e)
+        {
+            var errorMessage = InitSteppers();
+
+            if (errorMessage != null)
+                e.Context.Response.SetBadRequest(errorMessage);
+
+            string resultContent = "";
+
+            foreach (var item in steppers.Values)
+            {
+                if (!string.IsNullOrEmpty(resultContent))
+                    resultContent += " ";
+
+                var motor = (StepperMotor)item;
+
+                if (motor.NAPosition)
+                    resultContent += $"{motor.Name}:N/A";
+                else
+                    resultContent += $"{motor.Name}:{motor.Position}";
+            }
+
+            e.Context.Response.SetOK(resultContent);
+        }
+
+        public static void G28(WebServerEventArgs e)
+        {
+            var errorMessage = InitSteppers();
+
+            if (errorMessage != null)
+                e.Context.Response.SetBadRequest(errorMessage);
+
+            foreach (var item in steppers.Values)
+            {
+                var motor = (StepperMotor)item;
+
+                motor.Home();
+
+                if (!string.IsNullOrEmpty(motor.ErrorMessage))
+                    e.Context.Response.SetBadRequest();
+            }
+
+            e.Context.Response.SetOK();
+        }
+
+        public static void G90(WebServerEventArgs e)
+        {
+            AbsoluteCoordinates = true;
+
+            e.Context.Response.SetOK();
+        }
+
+        public static void G91(WebServerEventArgs e)
+        {
+            AbsoluteCoordinates = false;
+
+            e.Context.Response.SetOK();
+        }
 
         public static void M84(WebServerEventArgs e)
             => M18(e);
@@ -167,6 +284,46 @@ namespace NFGCodeESP32Client.Controllers
             e.Context.Response.SetOK();
         }
 
+        public static void G92(WebServerEventArgs e)
+        {
+            var query = e.Context.ReadBodyAsString();
+
+            var parameters = query.ParseGParameters();
+
+            StepperMotor stepper;
+
+            foreach (var item in parameters.Keys)
+            {
+                var key = (string)item;
+
+                stepper = GetOrInitStepper(key, out var errorMessage);
+
+                if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    e.Context.Response.SetBadRequest(errorMessage);
+                    return;
+                }
+
+                if (double.TryParse((string)parameters[item], out var distance))
+                {
+                    stepper.SetPosition(distance);
+
+                    if (!string.IsNullOrEmpty(stepper.ErrorMessage))
+                    {
+                        e.Context.Response.SetBadRequest(stepper.ErrorMessage);
+                        return;
+                    }
+                }
+                else
+                {
+                    e.Context.Response.SetBadRequest($"axis {item} have invalid move value {(string)parameters[item]}");
+                    return;
+                }
+            }
+
+            e.Context.Response.SetOK();
+        }
+
         public static void G0(WebServerEventArgs e)
         {
             var query = e.Context.ReadBodyAsString();
@@ -182,19 +339,14 @@ namespace NFGCodeESP32Client.Controllers
                 if (item.Equals("f"))
                     continue;
 
-                if (steppers.TryGetValue(item, out var _stepper))
-                    stepper = (StepperMotor)_stepper;
-                else
+                var key = (string)item;
+
+                stepper = GetOrInitStepper(key, out var errorMessage);
+
+                if (!string.IsNullOrEmpty(errorMessage))
                 {
-                    stepper = new StepperMotor((string)item, gpioController);
-
-                    if (!string.IsNullOrEmpty(stepper.ErrorMessage))
-                    {
-                        e.Context.Response.SetBadRequest(stepper.ErrorMessage);
-                        return;
-                    }
-
-                    steppers[item] = stepper;
+                    e.Context.Response.SetBadRequest(errorMessage);
+                    return;
                 }
 
                 if (double.TryParse((string)parameters[item], out var distance))
