@@ -92,10 +92,11 @@ namespace NFGCodeESP32Client.Controllers
 
         static bool allInited = false;
 
-        private static string InitSteppers()
+        private static void InitAllSteppers()
         {
             if (!allInited)
             {
+                ArrayList inited = new ArrayList();
                 foreach (var item in DynamicConfiguration.Options.Keys)
                 {
                     var key = (string)item;
@@ -109,14 +110,17 @@ namespace NFGCodeESP32Client.Controllers
                         if (eIdx > -1)
                             key = key.Substring(0, eIdx + 1);
 
-                        var stepper = GetOrInitStepper(key);
+                        if (inited.Contains(key))
+                            continue;
+
+                        inited.Add(key);
+
+                        GetOrInitStepper(key);
                     }
                 }
 
                 allInited = true;
             }
-
-            return null;
         }
 
         private static StepperMotor GetOrInitStepper(string key)
@@ -135,50 +139,29 @@ namespace NFGCodeESP32Client.Controllers
             return stepper;
         }
 
-        private static void MoveArc(WebServerEventArgs e, bool clockwise)
+        private static string MoveArc(string query, bool clockwise)
         {
-            var query = e.Context.ReadBodyAsString();
-
             var parameters = query.ParseGParameters();
 
-            object p__j = default;
-            object p__i = default;
+            bool haveI = parameters.TryGetDoubleValue("i", out var i);
+            bool haveJ = parameters.TryGetDoubleValue("j", out var j);
 
-            if (parameters.TryGetValue("i", out p__i) || parameters.TryGetValue("j", out p__j))
+            double x = double.MinValue;
+            double y = double.MinValue;
+
+            if (parameters.TryGetDoubleValue("x", out var cx))
+                x = cx;
+
+            if (parameters.TryGetDoubleValue("y", out var cy))
+                y = cy;
+
+            if (haveI || haveJ)
             {
-                double i = 0;
-                double j = 0;
-
-                if (p__i != default)
-                    double.TryParse((string)p__i, out i);
-
-                if (p__j != default)
-                    double.TryParse((string)p__j, out j);
-
-                double x = double.MinValue;
-                double y = double.MinValue;
-
-                if (parameters.TryGetValue("x", out var p__x) && double.TryParse((string)p__x, out var cx))
-                    x = cx;
-
-                if (parameters.TryGetValue("y", out var p__y) && double.TryParse((string)p__y, out var cy))
-                    y = cy;
-
                 MoveArcIJ(i, j, x, y, clockwise);
             }
-            else if (parameters.TryGetValue("r", out var p__r))
+            else if (parameters.TryGetDoubleValue("r", out var cr))
             {
-                double x = double.MinValue;
-                double y = double.MinValue;
-
-                if (!double.TryParse((string)p__r, out var cr))
-                    throw new Exception($"G2/G3 code with R parameter have invalid value \"{(string)p__r}\"");
-
-                if (parameters.TryGetValue("x", out var p__x) && double.TryParse((string)p__x, out var cx))
-                    x = cx;
-
-                if (parameters.TryGetValue("y", out var p__y) && double.TryParse((string)p__y, out var cy))
-                    y = cy;
+                //throw new Exception($"G2/G3 code with R parameter have invalid value \"{(string)p__r}\"");
 
                 if (x == double.MinValue && y == double.MinValue)
                     throw new Exception($"G2/G3 code with R parameter must have any X/Y parameters");
@@ -188,6 +171,8 @@ namespace NFGCodeESP32Client.Controllers
             }
             else
                 throw new Exception($"G2/G3 code must have parameters I/J or R, and this must be double/number, cannot invoke");
+
+            return default;
         }
 
         private static void MoveArcIJ(double i, double j, double x, double y, bool clockwise)
@@ -310,12 +295,9 @@ namespace NFGCodeESP32Client.Controllers
 
         #region GCodes
 
-        public static void M114(WebServerEventArgs e)
+        public static string M114(string ps)
         {
-            var errorMessage = InitSteppers();
-
-            if (errorMessage != null)
-                e.Context.Response.SetBadRequest(errorMessage);
+            InitAllSteppers();
 
             string resultContent = "";
 
@@ -332,15 +314,12 @@ namespace NFGCodeESP32Client.Controllers
                     resultContent += $"{motor.Name}:{motor.Position}";
             }
 
-            e.Context.Response.SetOK(resultContent);
+            return resultContent;
         }
 
-        public static void G28(WebServerEventArgs e)
+        public static string G28(string ps)
         {
-            var errorMessage = InitSteppers();
-
-            if (errorMessage != null)
-                e.Context.Response.SetBadRequest(errorMessage);
+            InitAllSteppers();
 
             foreach (var item in steppers.Values)
             {
@@ -349,54 +328,51 @@ namespace NFGCodeESP32Client.Controllers
                 motor.Home();
             }
 
-            e.Context.Response.SetOK();
+            return null;
         }
 
-        public static void G90(WebServerEventArgs e)
+        public static string G90(string ps)
         {
             AbsoluteCoordinates = true;
 
-            e.Context.Response.SetOK();
+            return default;
         }
 
-        public static void G91(WebServerEventArgs e)
+        public static string G91(string ps)
         {
             AbsoluteCoordinates = false;
 
-            e.Context.Response.SetOK();
+            return default;
         }
 
-        public static void M84(WebServerEventArgs e)
-            => M18(e);
+        public static string M84(string ps)
+            => M18(ps);
 
-        public static void M18(WebServerEventArgs e)
+        public static string M18(string ps)
         {
-            var query = e.Context.ReadBodyAsString();
+            var flags = ps.ParseGParameters();
 
-            var flags = query.Split(' ');
+            bool hasSleep = flags.TryGetIntValue('s', out var time);
 
-            if (flags.TryGetIntValue('S', out var time))
+            var steppers = new string[flags.Count - 1];
+
+            for (int i = 0, n = 0; i < flags.Count; i++)
             {
-                var steppers = new string[flags.Length - 1];
+                if (flags.Keys[i] != "s")
+                    continue;
 
-                for (int i = 0, n = 0; i < flags.Length; i++)
-                {
-                    if ($"S{time}".Equals(flags[0]))
-                        continue;
-
-                    steppers[n++] = flags[i];
-                }
-
-                new Thread(() => { Thread.Sleep(time); DisableSteppers(steppers); }).Start();
+                steppers[n++] = (string)flags.Keys[i];
             }
+
+            if (hasSleep)
+                new Thread(() => { Thread.Sleep(time); DisableSteppers(steppers); }).Start();
             else
-                DisableSteppers(flags);
+                DisableSteppers(steppers);
 
-
-            e.Context.Response.SetOK();
+            return default;
         }
 
-        public static void M17(WebServerEventArgs e)
+        public static string M17(string ps)
         {
             if (Options.ContainsKey($"steppers_{SteppersEnablePinConfigurationKey}"))
             {
@@ -415,56 +391,43 @@ namespace NFGCodeESP32Client.Controllers
             }
             else
             {
-                var flags = e.Context.ReadBodyAsString();
-
-                if (string.IsNullOrEmpty(flags))
+                if (string.IsNullOrEmpty(ps))
                 {
-                    e.Context.Response.SetBadRequest($"Not have configuration required key \"{$"steppers_{SteppersEnablePinConfigurationKey}"}\"");
-
-                    return;
+                    throw new Exception($"Not have configuration required key \"{$"steppers_{SteppersEnablePinConfigurationKey}"}\"");
                 }
 
-                try
+                var pflags = ps.ParseGParameters();
+
+                foreach (var value in pflags.Keys)
                 {
-                    var pflags = flags.Split(' ');
+                    var f = (string)value;
 
-                    foreach (var f in pflags)
+                    if (string.IsNullOrEmpty(f))
+                        continue;
+
+                    var flower = f.ToLower();
+
+                    GpioPin pin;
+
+                    if (stepperEnablePins.ContainsKey(flower))
+                        pin = (GpioPin)stepperEnablePins[flower];
+                    else
                     {
-                        if (string.IsNullOrEmpty(f))
-                            continue;
+                        pin = gpioController.OpenPin(Options.GetByte($"stepper_{flower}_{SteppersEnablePinConfigurationKey}", true), PinMode.Output);
 
-                        var flower = f.ToLower();
-
-                        GpioPin pin;
-
-                        if (stepperEnablePins.ContainsKey(flower))
-                            pin = (GpioPin)stepperEnablePins[flower];
-                        else
-                        {
-                            pin = gpioController.OpenPin(Options.GetByte($"stepper_{flower}_{SteppersEnablePinConfigurationKey}", true), PinMode.Output);
-
-                            stepperEnablePins[flower] = pin;
-                        }
-
-                        pin.Write(PinValue.Low);
+                        stepperEnablePins[flower] = pin;
                     }
 
-                }
-                catch (Exception ex)
-                {
-                    e.Context.Response.SetBadRequest(ex.Message);
-                    return;
+                    pin.Write(PinValue.Low);
                 }
             }
 
-            e.Context.Response.SetOK();
+            return default;
         }
 
-        public static void G92(WebServerEventArgs e)
+        public static string G92(string ps)
         {
-            var query = e.Context.ReadBodyAsString();
-
-            var parameters = query.ParseGParameters();
+            var parameters = ps.ParseGParameters();
 
             StepperMotor stepper;
 
@@ -480,21 +443,18 @@ namespace NFGCodeESP32Client.Controllers
                 }
                 else
                 {
-                    e.Context.Response.SetBadRequest($"axis {item} have invalid move value {(string)parameters[item]}");
-                    return;
+                    throw new Exception($"axis {item} have invalid move value {(string)parameters[item]}");
                 }
             }
 
-            e.Context.Response.SetOK();
+            return default;
         }
 
-        public static void G0(WebServerEventArgs e)
+        public static string G0(string ps)
         {
-            var query = e.Context.ReadBodyAsString();
+            var parameters = ps.ParseGParameters();
 
-            var parameters = query.ParseGParameters();
-
-            parameters.TryGetValue("f", out var fRate);
+            parameters.TryGetDoubleValue("f", out var fRate);
 
             StepperMotor stepper;
 
@@ -513,22 +473,21 @@ namespace NFGCodeESP32Client.Controllers
                 }
                 else
                 {
-                    e.Context.Response.SetBadRequest($"axis {item} have invalid move value {(string)parameters[item]}");
-                    return;
+                    throw new Exception($"axis {item} have invalid move value {(string)parameters[item]}");
                 }
             }
 
-            e.Context.Response.SetOK();
+            return default;
         }
 
-        public static void G1(WebServerEventArgs e)
-            => G0(e);
+        public static string G1(string ps)
+            => G0(ps);
 
-        public static void G2(WebServerEventArgs e)
-            => MoveArc(e, true);
+        public static string G2(string ps)
+            => MoveArc(ps, true);
 
-        public static void G3(WebServerEventArgs e)
-            => MoveArc(e, false);
+        public static string G3(string ps)
+            => MoveArc(ps, false);
 
         #endregion
     }

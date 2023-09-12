@@ -25,6 +25,7 @@
     <Compile Include="Configurations\WebServerConfiguration.cs" />
     <Compile Include="Configurations\WifiConfiguration.cs" />
     <Compile Include="Controllers\ConfigurationController.cs" />
+    <Compile Include="Controllers\GCodeController.cs" />
     <Compile Include="Controllers\HardwareController.cs" />
     <Compile Include="Controllers\DrivesController.cs" />
     <Compile Include="Controllers\NetworkController.cs" />
@@ -38,6 +39,7 @@
     <Compile Include="Utils\Extensions\ConfigurationExtensions.cs" />
     <Compile Include="Utils\Extensions\GCodeExtensions.cs" />
     <Compile Include="Utils\Extensions\HttpExtensions.cs" />
+    <Compile Include="Utils\Extensions\PDictionaryExtensions.cs" />
     <Compile Include="Utils\FileSystem.cs" />
     <Compile Include="Utils\PDictionary.cs" />
     <Compile Include="Utils\WebServer\RouteInfo.cs" />

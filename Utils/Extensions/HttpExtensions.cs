@@ -18,9 +18,17 @@ namespace NFGCodeESP32Client.Utils.Extensions
         {
             SetBadRequest(response);
 
+            if (content == default)
+                return;
+
             response.ContentType = "text/plain";
 
             nanoFramework.WebServer.WebServer.OutPutStream(response, content);
+        }
+
+        public static void SetNotFound(this HttpListenerResponse response)
+        {
+            nanoFramework.WebServer.WebServer.OutputHttpCode(response, System.Net.HttpStatusCode.NotFound);
         }
 
         public static void SetOK(this HttpListenerResponse response)
@@ -31,6 +39,9 @@ namespace NFGCodeESP32Client.Utils.Extensions
         public static void SetOK(this HttpListenerResponse response, string content)
         {
             SetOK(response);
+
+            if (content == default)
+                return;
 
             response.ContentType = "text/plain";
 

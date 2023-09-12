@@ -39,22 +39,9 @@ namespace NFGCodeESP32Client.Configurations
             RouteInfo.Post("Hardware/FirmwareVersion", HardwareController.FirmwareVersion),
             RouteInfo.Post("Hardware/Reboot", HardwareController.Reboot),
             RouteInfo.Post("Network/Ping", NetworkController.Ping),
-
+            
             // GCodes
-            RouteInfo.Post("GCode/M115", HardwareController.M115),
-            RouteInfo.Post("GCode/M114", DrivesController.M114),
-            RouteInfo.Post("GCode/M84", DrivesController.M84),
-            RouteInfo.Post("GCode/M18", DrivesController.M18),
-            RouteInfo.Post("GCode/M17", DrivesController.M17),
-            RouteInfo.Post("GCode/G92", DrivesController.G92),
-            RouteInfo.Post("GCode/G91", DrivesController.G91),
-            RouteInfo.Post("GCode/G90", DrivesController.G90),
-            RouteInfo.Post("GCode/G28", DrivesController.G28),
-            RouteInfo.Post("GCode/G3", DrivesController.G3),
-            RouteInfo.Post("GCode/G2", DrivesController.G2),
-            RouteInfo.Post("GCode/G1", DrivesController.G1),
-            RouteInfo.Post("GCode/G0", DrivesController.G0),
-
+            RouteInfo.Post("GCode/", GCodeController.InvokeGCodeRequest),
         };
 
         private static void Ws_CommandReceived(object obj, WebServerEventArgs e)
@@ -72,7 +59,7 @@ namespace NFGCodeESP32Client.Configurations
                 return;
             }
 
-            e.Context.Response.StatusCode = 404;
+            e.Context.Response.SetNotFound();
         }
     }
 }

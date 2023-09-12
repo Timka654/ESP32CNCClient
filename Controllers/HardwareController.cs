@@ -11,9 +11,7 @@ namespace NFGCodeESP32Client.Controllers
     {
         public static void FirmwareVersion(WebServerEventArgs e)
         {
-            e.Context.Response.ContentType = "text/plain";
-
-            WebServer.OutPutStream(e.Context.Response, FirmwareConfiguration.FirmwareVersion);
+            e.Context.Response.SetOK(FirmwareConfiguration.FirmwareVersion);
         }
 
         public static void Reboot(WebServerEventArgs e)
@@ -27,8 +25,8 @@ namespace NFGCodeESP32Client.Controllers
 
         #region GCodes
 
-        public static void M115(WebServerEventArgs e)
-            => FirmwareVersion(e);
+        public static string M115(string body)
+            => FirmwareConfiguration.FirmwareVersion;
 
         #endregion
     }

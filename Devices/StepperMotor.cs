@@ -102,13 +102,13 @@ namespace NFGCodeESP32Client.Devices
 
                 RotationDistance = DynamicConfiguration.Options.GetUInt16($"{stepperPrefix}_{RotationDistanceConfigurationName}", defaultValue: 40);
 
-                if (DynamicConfiguration.Options.TryGetValue($"{stepperPrefix}_{EndstopMinConfigurationName}", out var endstop_min_pin))
+                if (DynamicConfiguration.Options.TryGetStringValue($"{stepperPrefix}_{EndstopMinConfigurationName}", out var endstop_min_pin))
                 {
                     if (endstopsMap.TryGetValue(endstop_min_pin, out var endstop_min))
                         MinStop = (AxisEndStop)endstop_min;
                     else
                     {
-                        MinStop = new AxisEndStop((string)endstop_min_pin, gpioController);
+                        MinStop = new AxisEndStop(endstop_min_pin, gpioController);
 
                         endstopsMap.Add(MinStop.Name, MinStop);
                     }
@@ -116,13 +116,13 @@ namespace NFGCodeESP32Client.Devices
                     MinStop.OnStateChanged += MinStop_OnStateChanged;
                 }
 
-                if (DynamicConfiguration.Options.TryGetValue($"{stepperPrefix}_{EndstopMaxConfigurationName}", out var endstop_max_pin))
+                if (DynamicConfiguration.Options.TryGetStringValue($"{stepperPrefix}_{EndstopMaxConfigurationName}", out var endstop_max_pin))
                 {
                     if (endstopsMap.TryGetValue(endstop_max_pin, out var endstop_max))
                         MaxStop = (AxisEndStop)endstop_max;
                     else
                     {
-                        MaxStop = new AxisEndStop((string)endstop_max_pin, gpioController);
+                        MaxStop = new AxisEndStop(endstop_max_pin, gpioController);
 
                         endstopsMap.Add(MaxStop.Name, MaxStop);
                     }
