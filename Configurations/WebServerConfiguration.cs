@@ -68,7 +68,7 @@ namespace NFGCodeESP32Client.Configurations
                 if (!e.Context.Request.RawUrl.StartsWith(route.Url))
                     continue;
 
-                route.RouteHandle(e);
+                try { route.RouteHandle(e); } catch (Exception ex) { e.Context.Response.SetBadRequest(ex.Message); }
                 return;
             }
 

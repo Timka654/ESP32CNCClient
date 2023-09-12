@@ -5,6 +5,7 @@ using NFGCodeESP32Client.Devices;
 using NFGCodeESP32Client.Utils;
 using NFGCodeESP32Client.Utils.Extensions;
 using System;
+using System.Collections;
 using System.Device.Gpio;
 using System.Text;
 using System.Threading;
@@ -97,12 +98,18 @@ namespace NFGCodeESP32Client.Controllers
             {
                 foreach (var item in DynamicConfiguration.Options.Keys)
                 {
-                    if (((string)item).StartsWith("stepper_"))
-                    {
-                        var stepper = GetOrInitStepper((string)item, out var errorMessage);
+                    var key = (string)item;
 
-                        if (!string.IsNullOrEmpty(errorMessage))
-                            return errorMessage;
+                    if (key.StartsWith("stepper_"))
+                    {
+                        key = key.Substring("stepper_".Length);
+
+                        var eIdx = key.IndexOf('_');
+
+                        if (eIdx > -1)
+                            key = key.Substring(0, eIdx + 1);
+
+                        var stepper = GetOrInitStepper(key);
                     }
                 }
 
@@ -112,7 +119,7 @@ namespace NFGCodeESP32Client.Controllers
             return null;
         }
 
-        private static StepperMotor GetOrInitStepper(string key, out string errorMessage)
+        private static StepperMotor GetOrInitStepper(string key)
         {
             StepperMotor stepper = default;
 
@@ -122,18 +129,183 @@ namespace NFGCodeESP32Client.Controllers
             {
                 stepper = new StepperMotor((string)key, stepperEndStops, gpioController);
 
-                if (!string.IsNullOrEmpty(stepper.ErrorMessage))
-                {
-                    errorMessage = stepper.ErrorMessage;
-                    return null;
-                }
-
                 steppers[key] = stepper;
             }
 
-            errorMessage = null;
-
             return stepper;
+        }
+
+        private static void MoveArc(WebServerEventArgs e, bool clockwise)
+        {
+            var query = e.Context.ReadBodyAsString();
+
+            var parameters = query.ParseGParameters();
+
+            object p__j = default;
+            object p__i = default;
+
+            if (parameters.TryGetValue("i", out p__i) || parameters.TryGetValue("j", out p__j))
+            {
+                double i = 0;
+                double j = 0;
+
+                if (p__i != default)
+                    double.TryParse((string)p__i, out i);
+
+                if (p__j != default)
+                    double.TryParse((string)p__j, out j);
+
+                double x = double.MinValue;
+                double y = double.MinValue;
+
+                if (parameters.TryGetValue("x", out var p__x) && double.TryParse((string)p__x, out var cx))
+                    x = cx;
+
+                if (parameters.TryGetValue("y", out var p__y) && double.TryParse((string)p__y, out var cy))
+                    y = cy;
+
+                MoveArcIJ(i, j, x, y, clockwise);
+            }
+            else if (parameters.TryGetValue("r", out var p__r))
+            {
+                double x = double.MinValue;
+                double y = double.MinValue;
+
+                if (!double.TryParse((string)p__r, out var cr))
+                    throw new Exception($"G2/G3 code with R parameter have invalid value \"{(string)p__r}\"");
+
+                if (parameters.TryGetValue("x", out var p__x) && double.TryParse((string)p__x, out var cx))
+                    x = cx;
+
+                if (parameters.TryGetValue("y", out var p__y) && double.TryParse((string)p__y, out var cy))
+                    y = cy;
+
+                if (x == double.MinValue && y == double.MinValue)
+                    throw new Exception($"G2/G3 code with R parameter must have any X/Y parameters");
+
+                MoveArcIJ(cr, cr, x, y, true);
+
+            }
+            else
+                throw new Exception($"G2/G3 code must have parameters I/J or R, and this must be double/number, cannot invoke");
+        }
+
+        private static void MoveArcIJ(double i, double j, double x, double y, bool clockwise)
+        {
+            var xStepper = GetOrInitStepper("x");
+
+            var yStepper = GetOrInitStepper("y");
+
+            if (x == double.MinValue)
+                x = xStepper.Position;
+
+            if (y == double.MinValue)
+                y = yStepper.Position;
+
+
+            double centerX = xStepper.Position + i;
+            double centerY = yStepper.Position + j;
+
+            MoveArc(
+                xStepper.Position, yStepper.Position,
+                x, y,
+                centerX, centerY,
+                xStepper, yStepper,
+                clockwise);
+        }
+
+
+        public static void MoveArc(
+        double startX, double startY,
+        double endX, double endY,
+        double centerX, double centerY,
+        StepperMotor xStepper, StepperMotor yStepper,
+        bool clockwise = true, double resolution = 0.01)
+        {
+            // Рассчитайте радиус дуги
+            double radius = Math.Sqrt(Math.Pow(centerX - startX, 2) + Math.Pow(centerY - startY, 2));
+
+            // Определите начальный угол дуги относительно центра
+            double startAngle = Math.Atan2(startY - centerY, startX - centerX);
+
+            // Определите конечный угол дуги относительно центра
+            double endAngle = Math.Atan2(endY - centerY, endX - centerX);
+
+            double currentAngle = startAngle;
+
+
+            double nextX = xStepper.Position, nextY = yStepper.Position;
+
+            double lx = nextX;
+            double ly = nextY;
+
+            CancellationTokenSource cts = new CancellationTokenSource();
+
+            new Thread(new ThreadStart(() =>
+            {
+                while (!cts.Token.IsCancellationRequested)
+                {
+                    if (lx != nextX)
+                    {
+                        xStepper.Move(nextX);
+                        lx = nextX;
+                    }
+
+                    Thread.Sleep(20);
+                }
+
+            })).Start();
+
+            new Thread(new ThreadStart(() =>
+            {
+                while (!cts.Token.IsCancellationRequested)
+                {
+                    if (ly != nextY)
+                    {
+                        yStepper.Move(nextY);
+                        ly = nextY;
+                    }
+
+                    Thread.Sleep(20);
+                }
+            })).Start();
+
+
+            // Для G2 или G3 добавьте точки на дуге и прямой линии
+            if (clockwise)
+            {
+                if (startX == endX && startY == endY)
+                    endAngle += Math.PI / 2;
+
+                while (currentAngle >= -endAngle)
+                {
+                    nextX = centerX + radius * Math.Cos(currentAngle);
+                    nextY = centerY + radius * Math.Sin(currentAngle);
+
+                    while (lx != nextX && ly != nextY) Thread.Sleep(20);
+
+                    // Увеличьте угол на шаг в радианах (меньше - более точно, но более медленно)
+                    currentAngle -= resolution;
+                }
+            }
+            else
+            {
+                while (currentAngle <= endAngle)
+                {
+                    nextX = centerX + radius * Math.Cos(currentAngle);
+                    nextY = centerY + radius * Math.Sin(currentAngle);
+
+                    while (lx != nextX && ly != nextY) Thread.Sleep(20);
+
+                    // Увеличьте угол на шаг в радианах (меньше - более точно, но более медленно)
+                    currentAngle += resolution;
+                }
+            }
+            nextX = endX; nextY = endY;
+
+            while (lx != nextX && ly != nextY) Thread.Sleep(20);
+
+            cts.Cancel();
         }
 
         #region GCodes
@@ -175,9 +347,6 @@ namespace NFGCodeESP32Client.Controllers
                 var motor = (StepperMotor)item;
 
                 motor.Home();
-
-                if (!string.IsNullOrEmpty(motor.ErrorMessage))
-                    e.Context.Response.SetBadRequest();
             }
 
             e.Context.Response.SetOK();
@@ -303,23 +472,11 @@ namespace NFGCodeESP32Client.Controllers
             {
                 var key = (string)item;
 
-                stepper = GetOrInitStepper(key, out var errorMessage);
-
-                if (!string.IsNullOrEmpty(errorMessage))
-                {
-                    e.Context.Response.SetBadRequest(errorMessage);
-                    return;
-                }
+                stepper = GetOrInitStepper(key);
 
                 if (double.TryParse((string)parameters[item], out var pos))
                 {
                     stepper.SetPosition(pos);
-
-                    if (!string.IsNullOrEmpty(stepper.ErrorMessage))
-                    {
-                        e.Context.Response.SetBadRequest(stepper.ErrorMessage);
-                        return;
-                    }
                 }
                 else
                 {
@@ -348,23 +505,11 @@ namespace NFGCodeESP32Client.Controllers
 
                 var key = (string)item;
 
-                stepper = GetOrInitStepper(key, out var errorMessage);
-
-                if (!string.IsNullOrEmpty(errorMessage))
-                {
-                    e.Context.Response.SetBadRequest(errorMessage);
-                    return;
-                }
+                stepper = GetOrInitStepper(key);
 
                 if (double.TryParse((string)parameters[item], out var distance))
                 {
                     stepper.Move(distance);
-
-                    if (!string.IsNullOrEmpty(stepper.ErrorMessage))
-                    {
-                        e.Context.Response.SetBadRequest(stepper.ErrorMessage);
-                        return;
-                    }
                 }
                 else
                 {
@@ -380,16 +525,10 @@ namespace NFGCodeESP32Client.Controllers
             => G0(e);
 
         public static void G2(WebServerEventArgs e)
-        {
-            var query = e.Context.ReadBodyAsString();
-
-            var parameters = query.ParseGParameters();
-
-
-        }
+            => MoveArc(e, true);
 
         public static void G3(WebServerEventArgs e)
-            => G2(e);
+            => MoveArc(e, false);
 
         #endregion
     }

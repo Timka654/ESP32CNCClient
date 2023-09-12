@@ -11,8 +11,6 @@ namespace NFGCodeESP32Client.Devices
         private const string PinConfigurationName = "pin";
         private const string RevertStateConfigurationName = "revert_state";
 
-        public string ErrorMessage { get; private set; }
-
         public string Name { get; }
 
         public bool StateRevert { get; }
@@ -54,7 +52,7 @@ namespace NFGCodeESP32Client.Devices
             }
             catch (Exception ex)
             {
-                ErrorMessage = ex.ToString();
+                throw new Exception($"{nameof(AxisEndStop)} {Name} have initial error - {ex.Message}");
             }
         }
 

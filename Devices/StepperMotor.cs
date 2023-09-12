@@ -28,8 +28,6 @@ namespace NFGCodeESP32Client.Devices
 
         private readonly GpioController gpioController;
 
-        public string ErrorMessage { get; private set; }
-
         public GpioPin StepPin { get; }
 
         public GpioPin DirPin { get; }
@@ -44,7 +42,7 @@ namespace NFGCodeESP32Client.Devices
 
         public double Position { get; private set; }
 
-        public bool NAPosition { get; private set; } = true;
+        public bool NAPosition { get => naPosition && !EndstopsIgnore; private set => naPosition = value; }
 
         public double MinPosition { get; }
 
@@ -59,6 +57,8 @@ namespace NFGCodeESP32Client.Devices
         public AxisEndStop MaxStop { get; }
 
         private CancellationTokenSource processCancelTokenSource = new CancellationTokenSource();
+
+        private bool naPosition = true;
 
         public StepperMotor(string name, PDictionary endstopsMap, GpioController gpioController)
         {
@@ -102,7 +102,6 @@ namespace NFGCodeESP32Client.Devices
 
                 RotationDistance = DynamicConfiguration.Options.GetUInt16($"{stepperPrefix}_{RotationDistanceConfigurationName}", defaultValue: 40);
 
-
                 if (DynamicConfiguration.Options.TryGetValue($"{stepperPrefix}_{EndstopMinConfigurationName}", out var endstop_min_pin))
                 {
                     if (endstopsMap.TryGetValue(endstop_min_pin, out var endstop_min))
@@ -110,9 +109,6 @@ namespace NFGCodeESP32Client.Devices
                     else
                     {
                         MinStop = new AxisEndStop((string)endstop_min_pin, gpioController);
-
-                        if (!string.IsNullOrEmpty(MinStop.ErrorMessage))
-                            throw new Exception($"Cannot init max_endstop with name {stepperPrefix}_{EndstopMaxConfigurationName} ({MinStop.ErrorMessage})");
 
                         endstopsMap.Add(MinStop.Name, MinStop);
                     }
@@ -128,20 +124,23 @@ namespace NFGCodeESP32Client.Devices
                     {
                         MaxStop = new AxisEndStop((string)endstop_max_pin, gpioController);
 
-                        if (!string.IsNullOrEmpty(MaxStop.ErrorMessage))
-                            throw new Exception($"Cannot init max_endstop with name {stepperPrefix}_{EndstopMaxConfigurationName} ({MaxStop.ErrorMessage})");
-
                         endstopsMap.Add(MaxStop.Name, MaxStop);
                     }
 
                     MaxStop.OnStateChanged += MaxStop_OnStateChanged;
                 }
 
-                driver = new A4988C(StepPin, DirPin, Microsteps, RotationDistance, TimeSpan.Zero, gpioController, false);
+                if (MinStop == default && MaxStop == default && !EndstopsIgnore)
+                {
+                    throw new Exception($"must have {EndstopMinConfigurationName} or/and {EndstopMinConfigurationName} configuration or set {EndstopsIgnoreConfigurationName} to true or 1 for ignore");
+                }
+
+
+                driver = new A4988C(StepPin, DirPin, Microsteps, RotationDistance, TimeSpan.FromMilliseconds(20), gpioController, false);
             }
             catch (Exception ex)
             {
-                ErrorMessage = ex.Message;
+                throw new Exception($"Stepper {Name} have error - {ex.Message}");
             }
 
         }
@@ -172,8 +171,6 @@ namespace NFGCodeESP32Client.Devices
             {
                 Move(-1000, true);
 
-                ErrorMessage = default;
-
                 return;
             }
 
@@ -181,17 +178,13 @@ namespace NFGCodeESP32Client.Devices
             {
                 Move(1000, true);
 
-                ErrorMessage = default;
-
                 Move(-Position);
-
-                ErrorMessage = default;
 
                 return;
             }
 
             if (!EndstopsIgnore)
-                ErrorMessage = $"Cannot invoke home - stepper {Name} no have min/max endpoint.";
+                throw new Exception($"Cannot invoke home - stepper {Name} no have min/max endpoint.");
         }
 
         public void Move(double distance, bool ignoreCheck = false)
@@ -200,18 +193,13 @@ namespace NFGCodeESP32Client.Devices
             {
                 if (NAPosition)
                 {
-                    ErrorMessage = $"Cannot move {Name} axis. Need to set position or homing";
-                    return;
+                    throw new Exception($"Cannot move {Name} axis. Need to set position or homing");
                 }
 
                 var endPosition = DrivesController.AbsoluteCoordinates ? distance : Position + distance;
 
                 if (endPosition > MaxPosition || endPosition < MinPosition)
-                {
-                    ErrorMessage = $"Cannot move {Name} to position {endPosition} {{ {nameof(MinPosition)} = {MinPosition}, {nameof(MaxPosition)} = {MaxPosition} }}";
-
-                    return;
-                }
+                    throw new Exception($"Cannot move {Name} to position {endPosition} {{ {nameof(MinPosition)} = {MinPosition}, {nameof(MaxPosition)} = {MaxPosition} }}");
 
                 distance = endPosition - Position;
             }
@@ -226,12 +214,12 @@ namespace NFGCodeESP32Client.Devices
             if (processCancelTokenSource.IsCancellationRequested)
                 processCancelTokenSource = new CancellationTokenSource();
 
-            var procesed = driver.Rotate(new Angle(angle, UnitsNet.Units.AngleUnit.Degree), processCancelTokenSource.Token);
+            var processed = driver.Rotate(new Angle(angle, UnitsNet.Units.AngleUnit.Degree), processCancelTokenSource.Token);
 
-            if (procesed != 100)
+            if (processed != 100)
             {
-                Position -= distance - (distance / 100.0 * procesed);
-                ErrorMessage = $"Stepper {Name} have error on motion(processed = {procesed}%, currentPosition = {Position})";
+                Position -= distance - (distance / 100.0 * processed);
+                throw new Exception($"Stepper {Name} have error on motion(processed = {processed}%, currentPosition = {Position})");
             }
         }
 
@@ -254,143 +242,18 @@ namespace NFGCodeESP32Client.Devices
 
             if (driver != null)
                 driver.Dispose();
+
+            if (MinStop != null)
+                MinStop.OnStateChanged -= MinStop_OnStateChanged;
+
+            if (MaxStop != null)
+                MaxStop.OnStateChanged -= MinStop_OnStateChanged;
         }
 
         internal void SetPosition(double position)
         {
             NAPosition = false;
             Position = position;
-        }
-    }
-}
-
-namespace Iot.Device.A4988
-{
-    /// <summary>
-    /// Class for controlling A4988 stepper motor driver.
-    /// copy of <see cref="Iot.Device.A4988.A4988"/>
-    /// </summary>
-    public class A4988C : IDisposable
-    {
-        private readonly Microsteps _microsteps;
-
-        private readonly ushort _fullStepsPerRotation;
-
-        private readonly TimeSpan _sleepBetweenSteps;
-
-        private readonly GpioPin _stepPin;
-
-        private readonly GpioPin _dirPin;
-
-        private readonly bool _shouldDispose;
-
-        //
-        // Сводка:
-        //     Initializes a new instance of the Iot.Device.A4988.A4988 class.
-        //
-        // Параметры:
-        //   stepPin:
-        //     Pin connected to STEP driver pin.
-        //
-        //   dirPin:
-        //     Pin connected to DIR driver pin.
-        //
-        //   microsteps:
-        //     Microsteps mode.
-        //
-        //   fullStepsPerRotation:
-        //     Full steps per rotation.
-        //
-        //   sleepBetweenSteps:
-        //     By changing this parameter you can set delay between steps and control the rotation
-        //     speed (less time equals faster rotation).
-        //
-        //   gpioController:
-        //     GPIO controller.
-        //
-        //   shouldDispose:
-        //     True to dispose the Gpio Controller.
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="stepPin"> must be configured for output and cannot be disposed previous this instance</param>
-        /// <param name="dirPin"></param>
-        /// <param name="microsteps"></param>
-        /// <param name="fullStepsPerRotation"></param>
-        /// <param name="sleepBetweenSteps"></param>
-        /// <param name="gpioController"></param>
-        /// <param name="shouldDispose"></param>
-        public A4988C(GpioPin stepPin, GpioPin dirPin, Microsteps microsteps, ushort fullStepsPerRotation, TimeSpan sleepBetweenSteps, GpioController? gpioController = null, bool shouldDispose = true)
-        {
-            _microsteps = microsteps;
-            _fullStepsPerRotation = fullStepsPerRotation;
-            _sleepBetweenSteps = sleepBetweenSteps;
-
-            _shouldDispose = shouldDispose || gpioController == null;
-            _stepPin = stepPin;
-            _dirPin = dirPin;
-        }
-
-        //
-        // Сводка:
-        //     Controls the speed of rotation.
-        protected virtual void SleepBetweenSteps()
-        {
-            if (!(_sleepBetweenSteps == TimeSpan.Zero))
-            {
-                Thread.Sleep(_sleepBetweenSteps);
-            }
-        }
-
-        //
-        // Сводка:
-        //     Rotates a stepper motor.
-        //
-        // Параметры:
-        //   angle:
-        //     Angle to rotate.
-        public virtual double Rotate(Angle angle, CancellationToken cancellationToken = default)
-        {
-            if (angle.Degrees != 0.0)
-            {
-                _dirPin.Write((angle.Degrees > 0.0) ? PinValue.High : PinValue.Low);
-
-                double num = ((angle.Degrees < 0.0) ? (0.0 - angle.Degrees) : angle.Degrees);
-
-                double num2 = num / 360.0 * (double)(int)_fullStepsPerRotation * (double)(int)_microsteps;
-
-                int i = 0;
-                try
-                {
-                    for (; (double)i < num2; i++)
-                    {
-                        if (!Equals(cancellationToken, default(CancellationToken)))
-                            cancellationToken.ThrowIfCancellationRequested();
-
-                        _stepPin.Write(PinValue.High);
-                        SleepBetweenSteps();
-
-                        _stepPin.Write(PinValue.Low);
-                        SleepBetweenSteps();
-                    }
-
-                }
-                catch (Exception)
-                {
-                    return (i / num2) * 100;
-                }
-
-            }
-
-            return 100;
-        }
-
-        public void Dispose()
-        {
-            if (_shouldDispose)
-            {
-
-            }
         }
     }
 }

@@ -29,6 +29,7 @@
     <Compile Include="Controllers\DrivesController.cs" />
     <Compile Include="Controllers\NetworkController.cs" />
     <Compile Include="Controllers\SensorsController.cs" />
+    <Compile Include="Devices\A4988C.cs" />
     <Compile Include="Devices\AxisEndStop.cs" />
     <Compile Include="Devices\StepperMotor.cs" />
     <Compile Include="Program.cs" />
