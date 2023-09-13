@@ -1,7 +1,10 @@
 ﻿using NFGCodeESP32Client.Configurations;
+using NFGCodeESP32Client.Utils;
+using NFGCodeESP32Client.Utils.Configuration;
 using NFGCodeESP32Client.Utils.Extensions;
 using System;
 using System.Device.Gpio;
+using System.Diagnostics;
 using System.Text;
 
 namespace NFGCodeESP32Client.Devices
@@ -10,6 +13,7 @@ namespace NFGCodeESP32Client.Devices
     {
         private const string PinConfigurationName = "pin";
         private const string RevertStateConfigurationName = "revert_state";
+        private const string PullTypeConfigurationName = "pull_type";
 
         public string Name { get; }
 
@@ -19,6 +23,8 @@ namespace NFGCodeESP32Client.Devices
 
         public bool State { get; set; }
 
+        public InputTypeEnum PullType { get; set; }
+
         public event Action OnStateChanged = () => { };
 
         public AxisEndStop(string name, GpioController gpioController)
@@ -27,17 +33,22 @@ namespace NFGCodeESP32Client.Devices
 
             try
             {
-                if (name.StartsWith("{") && name.EndsWith("}"))
+                if (name.TryParseVariable(out name))
                 {
-                    Name = name.Substring(1, name.Length - 2);
+                    Name = name;
 
                     var axisPrefix = $"endstop_{name.ToLower()}";
 
+                    PullType = DynamicConfiguration.Options
+                        .GetString($"{axisPrefix}_{PullTypeConfigurationName}", defaultValue: nameof(InputTypeEnum.PullDown))
+                        .ParseInputType();
+
                     StopPin = gpioController.OpenPin(
                         DynamicConfiguration.Options.GetByte($"{axisPrefix}_{PinConfigurationName}", true),
-                        PinMode.Input);
+                        (PinMode)PullType);
 
                     StateRevert = DynamicConfiguration.Options.GetBool($"{axisPrefix}_{RevertStateConfigurationName}", defaultValue: false);
+                    
                 }
                 else if (int.TryParse(name, out var pin))
                 {
@@ -58,6 +69,8 @@ namespace NFGCodeESP32Client.Devices
 
         private void StopPin_ValueChanged(object sender, PinValueChangedEventArgs e)
         {
+            Debug.WriteLine($"{nameof(StopPin_ValueChanged)} invoked");
+
             var state = StopPin.Read() == PinValue.High;
 
             if (StateRevert)

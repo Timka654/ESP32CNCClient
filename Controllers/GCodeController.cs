@@ -41,7 +41,7 @@ namespace NFGCodeESP32Client.Controllers
             if (code.Length > SubStrLen)
             {
                 code = code
-                    .Substring(SubStrLen)
+                    .Substring(SubStrLen + 1)
                     .ToUpper();
 
                 GCodeCommandHandle c;
@@ -51,7 +51,7 @@ namespace NFGCodeESP32Client.Controllers
                     {
                         c = (GCodeCommandHandle)item;
 
-                        if (c.Code.Equals(code))
+                        if (!c.Code.Equals(code))
                             continue;
 
                         LatestCode = c;
@@ -68,7 +68,7 @@ namespace NFGCodeESP32Client.Controllers
                 catch (Exception ex) { request.Context.Response.SetBadRequest(ex.Message); }
             }
 
-            request.Context.Response.SetNotFound();
+            request.Context.Response.SetNotFound($"GCode {code} not found. Or latest code is not set.");
         }
 
     public delegate string GCodeInvokeDelegate(string parameters);

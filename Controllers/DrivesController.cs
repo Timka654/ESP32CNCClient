@@ -108,7 +108,7 @@ namespace NFGCodeESP32Client.Controllers
                         var eIdx = key.IndexOf('_');
 
                         if (eIdx > -1)
-                            key = key.Substring(0, eIdx + 1);
+                            key = key.Substring(0, eIdx);
 
                         if (inited.Contains(key))
                             continue;
@@ -319,13 +319,35 @@ namespace NFGCodeESP32Client.Controllers
 
         public static string G28(string ps)
         {
-            InitAllSteppers();
 
-            foreach (var item in steppers.Values)
+            var keys = ps.ParseGParameters();
+
+            var oContains = keys.ContainsKey("o");
+
+            if ((oContains && keys.Count == 1) || keys.Count == 0)
             {
-                var motor = (StepperMotor)item;
+                InitAllSteppers();
 
-                motor.Home();
+                foreach (var item in steppers.Values)
+                {
+                    var motor = (StepperMotor)item;
+
+                    if ((!motor.NAPosition && oContains) || !oContains)
+                        motor.Home();
+                }
+            }
+            else
+            {
+                foreach (var item in keys.Keys)
+                {
+                    if ((string)item == "o")
+                        continue;
+
+                    var motor = GetOrInitStepper((string)item);
+
+                    if ((!motor.NAPosition && oContains) || !oContains)
+                        motor.Home();
+                }
             }
 
             return null;

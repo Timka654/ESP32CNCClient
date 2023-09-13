@@ -31,6 +31,18 @@ namespace NFGCodeESP32Client.Utils.Extensions
             nanoFramework.WebServer.WebServer.OutputHttpCode(response, System.Net.HttpStatusCode.NotFound);
         }
 
+        public static void SetNotFound(this HttpListenerResponse response, string content)
+        {
+            SetNotFound(response);
+
+            if (content == default)
+                return;
+
+            response.ContentType = "text/plain";
+
+            nanoFramework.WebServer.WebServer.OutPutStream(response, content);
+        }
+
         public static void SetOK(this HttpListenerResponse response)
         {
             nanoFramework.WebServer.WebServer.OutputHttpCode(response, System.Net.HttpStatusCode.OK);

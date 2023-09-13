@@ -82,7 +82,7 @@ namespace NFGCodeESP32Client.Devices
                     DynamicConfiguration.Options.GetByte($"{stepperPrefix}_{DirPinConfigurationName}", true),
                     PinMode.Output);
 
-                DirRevert = DynamicConfiguration.Options.GetBool($"{stepperPrefix}_{DirRevertConfigurationName}");
+                DirRevert = DynamicConfiguration.Options.GetBool($"{stepperPrefix}_{DirRevertConfigurationName}", defaultValue: false);
 
                 Microsteps = (Microsteps)DynamicConfiguration.Options.GetByte($"{stepperPrefix}_{MicrostepsConfigurationName}");
 
@@ -104,7 +104,7 @@ namespace NFGCodeESP32Client.Devices
 
                 if (DynamicConfiguration.Options.TryGetStringValue($"{stepperPrefix}_{EndstopMinConfigurationName}", out var endstop_min_pin))
                 {
-                    if (endstopsMap.TryGetValue(endstop_min_pin, out var endstop_min))
+                    if (endstopsMap.TryGetValue(endstop_min_pin.ClearVariable(), out var endstop_min))
                         MinStop = (AxisEndStop)endstop_min;
                     else
                     {
@@ -136,10 +136,11 @@ namespace NFGCodeESP32Client.Devices
                 }
 
 
-                driver = new A4988C(StepPin, DirPin, Microsteps, RotationDistance, TimeSpan.FromMilliseconds(20), gpioController, false);
+                driver = new A4988C(StepPin, DirPin, Microsteps, RotationDistance, TimeSpan.FromMilliseconds(2), gpioController, false);
             }
             catch (Exception ex)
             {
+                Dispose();
                 throw new Exception($"Stepper {Name} have error - {ex.Message}");
             }
 
