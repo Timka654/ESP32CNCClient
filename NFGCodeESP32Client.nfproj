@@ -42,6 +42,7 @@
     <Compile Include="Utils\Extensions\HttpExtensions.cs" />
     <Compile Include="Utils\Extensions\PDictionaryExtensions.cs" />
     <Compile Include="Utils\FileSystem.cs" />
+    <Compile Include="Utils\Logger.cs" />
     <Compile Include="Utils\PDictionary.cs" />
     <Compile Include="Utils\StringExtensions.cs" />
     <Compile Include="Utils\WebServer\RouteInfo.cs" />

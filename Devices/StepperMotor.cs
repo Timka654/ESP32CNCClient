@@ -114,6 +114,7 @@ namespace NFGCodeESP32Client.Devices
                     }
 
                     MinStop.OnStateChanged += MinStop_OnStateChanged;
+                    MinStop_OnStateChanged();
                 }
 
                 if (DynamicConfiguration.Options.TryGetStringValue($"{stepperPrefix}_{EndstopMaxConfigurationName}", out var endstop_max_pin))
@@ -128,6 +129,7 @@ namespace NFGCodeESP32Client.Devices
                     }
 
                     MaxStop.OnStateChanged += MaxStop_OnStateChanged;
+                    MaxStop_OnStateChanged();
                 }
 
                 if (MinStop == default && MaxStop == default && !EndstopsIgnore)
@@ -245,7 +247,7 @@ namespace NFGCodeESP32Client.Devices
                 MinStop.OnStateChanged -= MinStop_OnStateChanged;
 
             if (MaxStop != null)
-                MaxStop.OnStateChanged -= MinStop_OnStateChanged;
+                MaxStop.OnStateChanged -= MaxStop_OnStateChanged;
         }
 
         internal void SetPosition(double position)

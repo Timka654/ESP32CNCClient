@@ -60,6 +60,8 @@ namespace NFGCodeESP32Client.Controllers
                 }
 
                 steppers.Clear();
+
+                allInited = false;
             };
         }
 

@@ -1,5 +1,6 @@
 ﻿using nanoFramework.WebServer;
 using NFGCodeESP32Client.Controllers;
+using NFGCodeESP32Client.Utils;
 using NFGCodeESP32Client.Utils.Extensions;
 using NFGCodeESP32Client.Utils.WebServer;
 using System;
@@ -17,7 +18,7 @@ namespace NFGCodeESP32Client.Configurations
         {
             int port = DynamicConfiguration.Options.GetInt(WebServerPortConfigurationName, defaultValue: 80);
 
-            Debug.WriteLine($"Initialize web server on {port} port");
+            Logger.WriteLine($"Initialize web server on {port} port");
 
             var ws = new WebServer(port, HttpProtocol.Http);
 
@@ -25,7 +26,7 @@ namespace NFGCodeESP32Client.Configurations
 
             ws.Start();
 
-            Debug.WriteLine("Web server started.");
+            Logger.WriteLine("Web server started.");
 
             return true;
         }

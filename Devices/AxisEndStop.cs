@@ -6,6 +6,7 @@ using System;
 using System.Device.Gpio;
 using System.Diagnostics;
 using System.Text;
+using System.Threading;
 
 namespace NFGCodeESP32Client.Devices
 {
@@ -39,27 +40,33 @@ namespace NFGCodeESP32Client.Devices
 
                     var axisPrefix = $"endstop_{name.ToLower()}";
 
-                    PullType = DynamicConfiguration.Options
-                        .GetString($"{axisPrefix}_{PullTypeConfigurationName}", defaultValue: nameof(InputTypeEnum.PullDown))
+                    var pType = DynamicConfiguration.Options
+                        .GetString($"{axisPrefix}_{PullTypeConfigurationName}", defaultValue: nameof(InputTypeEnum.PullDown));
+
+                    PullType = pType
                         .ParseInputType();
 
-                    StopPin = gpioController.OpenPin(
-                        DynamicConfiguration.Options.GetByte($"{axisPrefix}_{PinConfigurationName}", true),
-                        (PinMode)PullType);
-
                     StateRevert = DynamicConfiguration.Options.GetBool($"{axisPrefix}_{RevertStateConfigurationName}", defaultValue: false);
-                    
+
+                    var pin = DynamicConfiguration.Options.GetByte($"{axisPrefix}_{PinConfigurationName}", true);
+
+                    if (!gpioController.IsPinModeSupported(pin, (PinMode)PullType))
+                        throw new Exception($"{pType} unsupported for pin {pin}");
+
+                    StopPin = gpioController.OpenPin(pin,
+                        (PinMode)PullType);
                 }
                 else if (int.TryParse(name, out var pin))
                 {
                     StopPin = gpioController.OpenPin(
                         pin,
-                        PinMode.Input);
+                        (PinMode)InputTypeEnum.PullDown);
                 }
                 else
                     throw new Exception($"Invalid value for endstop = {name}");
 
                 StopPin.ValueChanged += StopPin_ValueChanged;
+                StopPin_ValueChanged(default, default);
             }
             catch (Exception ex)
             {
@@ -67,9 +74,14 @@ namespace NFGCodeESP32Client.Devices
             }
         }
 
+        AutoResetEvent processLocker = new AutoResetEvent(true);
+
         private void StopPin_ValueChanged(object sender, PinValueChangedEventArgs e)
         {
-            Debug.WriteLine($"{nameof(StopPin_ValueChanged)} invoked");
+            if (!processLocker.WaitOne(Timeout.Infinite, true))
+                return;
+
+            Logger.WriteLine($"{nameof(StopPin_ValueChanged)} invoked for {Name}");
 
             var state = StopPin.Read() == PinValue.High;
 
@@ -78,9 +90,12 @@ namespace NFGCodeESP32Client.Devices
 
             if (State != state)
             {
+                Logger.WriteLine($"{Name} endstop have new state = {state}");
                 State = state;
                 OnStateChanged();
             }
+
+            processLocker.Set();
         }
 
         public void Dispose()
