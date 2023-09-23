@@ -22,8 +22,6 @@ namespace NFGCodeESP32Client.Devices
 
         private readonly GpioPin _dirPin;
 
-        private readonly bool _shouldDispose;
-
         //
         // Сводка:
         //     Initializes a new instance of the Iot.Device.A4988.A4988 class.
@@ -60,13 +58,12 @@ namespace NFGCodeESP32Client.Devices
         /// <param name="sleepBetweenSteps"></param>
         /// <param name="gpioController"></param>
         /// <param name="shouldDispose"></param>
-        public A4988C(GpioPin stepPin, GpioPin dirPin, Microsteps microsteps, ushort fullStepsPerRotation, TimeSpan sleepBetweenSteps, GpioController? gpioController = null, bool shouldDispose = true)
+        public A4988C(GpioPin stepPin, GpioPin dirPin, Microsteps microsteps, ushort fullStepsPerRotation, TimeSpan sleepBetweenSteps)
         {
             _microsteps = microsteps;
             _fullStepsPerRotation = fullStepsPerRotation;
             _sleepBetweenSteps = sleepBetweenSteps;
 
-            _shouldDispose = shouldDispose || gpioController == null;
             _stepPin = stepPin;
             _dirPin = dirPin;
         }
@@ -98,7 +95,6 @@ namespace NFGCodeESP32Client.Devices
                 double num = angle.Degrees < 0.0 ? 0.0 - angle.Degrees : angle.Degrees;
 
                 double num2 = num / 360.0 * _fullStepsPerRotation * (int)_microsteps;
-
                 int i = 0;
                 try
                 {
@@ -108,9 +104,9 @@ namespace NFGCodeESP32Client.Devices
                             cancellationToken.ThrowIfCancellationRequested();
 
                         _stepPin.Write(PinValue.High);
-                        SleepBetweenSteps();
 
                         _stepPin.Write(PinValue.Low);
+
                         SleepBetweenSteps();
                     }
 
@@ -127,10 +123,6 @@ namespace NFGCodeESP32Client.Devices
 
         public void Dispose()
         {
-            if (_shouldDispose)
-            {
-
-            }
         }
     }
 }

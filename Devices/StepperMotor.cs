@@ -136,7 +136,7 @@ namespace NFGCodeESP32Client.Devices
                 }
 
 
-                driver = new A4988C(StepPin, DirPin, Microsteps, RotationDistance, TimeSpan.FromMilliseconds(2), gpioController, false);
+                driver = new A4988C(StepPin, DirPin, Microsteps, RotationDistance, TimeSpan.Zero);
             }
             catch (Exception ex)
             {
@@ -205,17 +205,14 @@ namespace NFGCodeESP32Client.Devices
                 distance = endPosition - Position;
             }
 
-            if (DirRevert)
-                distance = -distance;
-
             Position += distance;
 
-            var angle = (distance / RotationDistance) * 360;
+            var angle = distance * 360;
 
             if (processCancelTokenSource.IsCancellationRequested)
                 processCancelTokenSource = new CancellationTokenSource();
 
-            var processed = driver.Rotate(new Angle(angle, UnitsNet.Units.AngleUnit.Degree), processCancelTokenSource.Token);
+            var processed = driver.Rotate(new Angle(DirRevert ? -angle : angle, UnitsNet.Units.AngleUnit.Degree), processCancelTokenSource.Token);
 
             if (processed != 100)
             {
@@ -224,16 +221,16 @@ namespace NFGCodeESP32Client.Devices
             }
         }
 
-        public void MoveAngle(double angle)
-        {
-            if (DirRevert)
-                angle = -angle;
+        //public void MoveAngle(double angle)
+        //{
+        //    if (DirRevert)
+        //        angle = -angle;
 
-            if (processCancelTokenSource.IsCancellationRequested)
-                processCancelTokenSource = new CancellationTokenSource();
+        //    if (processCancelTokenSource.IsCancellationRequested)
+        //        processCancelTokenSource = new CancellationTokenSource();
 
-            driver.Rotate(new Angle(angle, UnitsNet.Units.AngleUnit.Degree));
-        }
+        //    driver.Rotate(new Angle(angle, UnitsNet.Units.AngleUnit.Degree));
+        //}
 
         public void Dispose()
         {

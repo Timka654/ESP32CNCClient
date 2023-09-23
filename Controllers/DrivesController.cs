@@ -319,7 +319,6 @@ namespace NFGCodeESP32Client.Controllers
 
         public static string G28(string ps)
         {
-
             var keys = ps.ParseGParameters();
 
             var oContains = keys.ContainsKey("o");
@@ -376,11 +375,11 @@ namespace NFGCodeESP32Client.Controllers
 
             bool hasSleep = flags.TryGetIntValue('s', out var time);
 
-            var steppers = new string[flags.Count - 1];
+            string[] steppers = new string[flags.Count - (hasSleep ? 1 : 0)];
 
             for (int i = 0, n = 0; i < flags.Count; i++)
             {
-                if (flags.Keys[i] != "s")
+                if (flags.Keys[i] == "s")
                     continue;
 
                 steppers[n++] = (string)flags.Keys[i];
